@@ -397,22 +397,30 @@ def page_admin():
                 "total": r["total"], "grade": r["grade"], "axis_scores": r["axis_scores"]})
         st.rerun()
 
-    cols = st.columns(len(top)) if len(top) <= 3 else [st.container() for _ in top]
-    for i, r in enumerate(top):
-        with cols[i]:
-            st.markdown('<div class="kk-card">', unsafe_allow_html=True)
-            medal = medals[i] if i < len(medals) else f"{i+1}위"
-            st.markdown(f'<div class="kk-rank">{medal} {mask_name(r["name"])}</div>', unsafe_allow_html=True)
-            gc = grade_color(r["total"])
-            st.markdown(f'<div class="kk-score">{r["total"]}<span style="font-size:18px;color:#999">/100</span></div>',
-                        unsafe_allow_html=True)
-            st.markdown(f'<span class="kk-badge" style="background:{gc}">{r["grade"]}</span>',
-                        unsafe_allow_html=True)
-            st.plotly_chart(radar_figure(r["axis_scores"], color=gc, height=300),
-                            use_container_width=True, config={"displayModeBar": False})
-            if r.get("comment"):
-                st.info(f"💬 {r['comment']}")
-            st.markdown("</div>", unsafe_allow_html=True)
+    st.caption("아래로 스크롤하며 3위 → 2위 → 1위 순으로 공개하세요 👇")
+    # 3위부터 1위까지 세로로 나열 (스크롤 내리며 극적으로 공개)
+    for i in reversed(range(len(top))):   # i=2(3위) → 1(2위) → 0(1위)
+        r = top[i]
+        gc = grade_color(r["total"])
+        medal = medals[i] if i < len(medals) else f"{i+1}위"
+        rank_label = ["1위", "2위", "3위"][i] if i < 3 else f"{i+1}위"
+        # 다음 순위와 화면상 분리되도록 위쪽 여백 (스크롤 공개 효과)
+        st.markdown('<div style="height:120px"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="kk-card">', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center;color:#888;font-size:15px;font-weight:700">{rank_label}</div>',
+                    unsafe_allow_html=True)
+        st.markdown(f'<div class="kk-rank" style="text-align:center;font-size:30px">{medal} {mask_name(r["name"])}</div>',
+                    unsafe_allow_html=True)
+        st.markdown(f'<div class="kk-score" style="text-align:center">{r["total"]}'
+                    f'<span style="font-size:18px;color:#999">/100</span></div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="text-align:center"><span class="kk-badge" style="background:{gc}">{r["grade"]}</span></div>',
+                    unsafe_allow_html=True)
+        st.plotly_chart(radar_figure(r["axis_scores"], color=gc, height=340),
+                        use_container_width=True, config={"displayModeBar": False},
+                        key=f"radar_top_{i}")
+        if r.get("comment"):
+            st.info(f"💬 {r['comment']}")
+        st.markdown("</div>", unsafe_allow_html=True)
 
     ordered = sorted(rows, key=lambda r: (-r["total"], r["order"]))
     with st.expander("전체 순위 보기 (이름 마스킹)"):
